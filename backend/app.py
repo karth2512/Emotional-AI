@@ -29,27 +29,20 @@ import pyaudio
 import wave
 from keras.models import model_from_json
 tf.keras.backend.clear_session()
-print("IMPORTED")
-# CHUNK = 1024 
-# FORMAT = pyaudio.paInt16 #paInt8
-# CHANNELS = 2 
-# RATE = 44100 #sample rate
-# RECORD_SECONDS = 10
-# json_file = open('model.json', 'r')
-# loaded_model_json = json_file.read()
-# json_file.close()
-# loaded_model = model_from_json(loaded_model_json)
-# loaded_model.load_weights("saved_models/Emotion_Voice_Detection_Model.h5")
-# print("Loaded model from disk")
-emotion_model_path = './models/fer2013_mini_XCEPTION.102-0.66.hdf5'
+
+#config
 emotion_labels = get_labels('fer2013')
 frame_window = 10
 emotion_offsets = (20, 40)
+
+#loading pretrained model from disk
+emotion_model_path = './models/fer2013_mini_XCEPTION.102-0.66.hdf5'
 face_cascade = cv2.CascadeClassifier('./models/haarcascade_frontalface_default.xml')
 emotion_classifier = load_model(emotion_model_path)
+
 emotion_target_size = emotion_classifier.input_shape[1:3]
 emotion_window = []
-print("Loaded model from disk")
+
 global graph
 graph = tf.get_default_graph()
 
