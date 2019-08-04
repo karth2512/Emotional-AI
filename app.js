@@ -42,6 +42,8 @@ function stopRecording() {
     rec.exportWAV(processRecording);
 }
 
+// Function process the latest voice recording
+// Converts voice data from native form to base64 and call respective response APIs
 function processRecording(blob) {
     var fd = new FormData();
     fd.append('fname', 'test.wav');
@@ -50,50 +52,50 @@ function processRecording(blob) {
     reader.onloadend = function() {
         base64data = reader.result;
         fd.append('data', base64data);
+
+        //Sending to data to api that recognizes features indicative of emotion from the voice
         $.ajax({
             type: 'POST',
-            url: 'http://127.0.0.1:5001/voice',
+            url: 'http://127.0.0.1:5001/voice2emotion',
             data: fd,
             processData: false,
             contentType: false,
         }).done(function(data) {
-            console.log(data);
+
+            //Chaining call to speech API that converts speech to text
             $.ajax({
                 type: 'GET',
-                url: 'http://127.0.0.1:5001/speech',
+                url: 'http://127.0.0.1:5001/speech2text',
                 data: fd,
                 processData: false,
                 contentType: false,
             }).done(function(data) {
-                clickHandler2(toTitleCase(data));
-                var fd2 = new FormData();
-                fd2.append('data', data);
-                $.ajax({
-                    type: 'GET',
-                    url: 'http://127.0.0.1:5001/say',
-                    data: fd2,
-                    processData: false,
-                    contentType: false,
-                }).done(function(data) {
 
-                    //console.log(data);
-                });
+                generateResponse(toTitleCase(data));
+
             });
         });
     }
 }
 
+//converts input string to TitleCase
 function toTitleCase(toTransform) {
     return toTransform.replace(/\b([a-z])/g, function(_, initial) {
         return initial.toUpperCase();
     });
 }
 
-function clickHandler2(str) {
+/*
+Function takes a string as input.
+Appends the additional features from the user's voice and face 
+Feeds into the RASA chatbot running at http://localhost:5005
+The response gerenated is directed(with vocal narration) into the chat interface.
+*/
+function generateResponse(str) {
 
     $(".card-body")[1].innerHTML += `<div class="row justify-content-end marign_add3"><span class="badge badge-pill badge-info text_receive" id="result">` + str + `</span></div>`;
     
-    //add emtoion to input text
+    //add latest recorded emtoion to input text
     str += emot[emot.length-1]
 
     var settings = {
@@ -110,10 +112,10 @@ function clickHandler2(str) {
     }
 
     $.ajax(settings).done(function(response) {
-        //console.log("HERE")
+
+        //response given by the chatbot is formatted and displayed with appropriate time delays considering length of words and narration time.
         var result = [];
         var a = response[0]["text"].split("\n")
-        //console.log(a)
         var cumm = 0;
         for (var i = 0; i <= a.length - 1; i++) {
             texttime(a[i], cumm);
@@ -124,6 +126,7 @@ function clickHandler2(str) {
     $(".text-input-chat")[0].value = "";
 };
 
+// Displays text (el) with a delay proportional to the parameter (i)
 function texttime(el, i) {
     setTimeout(function() {
         $(".card-body")[1].innerHTML += `<div class="row marign_add3">
@@ -134,8 +137,10 @@ function texttime(el, i) {
     }, i * 350);
 }
 
+// Speaks text (el) with a delay proportional to the parameter (i)
 function speechtime(el, i) {
     setTimeout(function() {
+        //sanitary check before speech
         var res = el.replace(/<[^>]*>/gi, "");
         responsiveVoice.speak(res);
     }, i * 350);
